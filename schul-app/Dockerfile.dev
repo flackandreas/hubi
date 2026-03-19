@@ -1,0 +1,14 @@
+# Dockerfile.dev
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Für Hot-Reloading via Docker Volumes
+ENV WATCHPACK_POLLING=true
+
+COPY package*.json ./
+# Da beim Starten des Containers erst danach Next initialisiert wird, ignorieren wir den Error
+RUN npm install || true
+
+# Die App wird über docker-compose als Volume nach /app gemountet
+CMD ["npm", "run", "dev"]
