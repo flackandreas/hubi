@@ -1,13 +1,75 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  role      Role     @default(STUDENT) // STUDENT, PARENT, ADMIN
+  name      String
+  email     String   @unique
+  password  String   // Hashed password
+  classId   String?  // Für Schüler
+  class     Class?   @relation(fields: [classId], references: [id])
+  parentOf  User[]   @relation("ParentChild")
+  children  User[]   @relation("ParentChild")
+  homework  HomeworkStatus[]
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String   @unique // z.B. "10A"
+  students  User[]
+  timetables Timetable[]
+  homeworks Homework[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  color     String?  // Hex-Color für visuelle Trennung im Stundenplan
+  timetables Timetable[]
+  homeworks Homework[]
+}
+
+model Timetable {
+  id        String   @id @default(cuid())
+  classId   String
+  subjectId String
+  dayOfWeek Int      // 1 = Montag, 5 = Freitag
+  period    Int      // 1. Stunde, 2. Stunde
+  room      String?
+  teacherId String?
+  class     Class    @relation(fields: [classId], references: [id])
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+}
+
+model Homework {
+  id          String   @id @default(cuid())
+  classId     String
+  subjectId   String
+  description String
+  dueDate     DateTime
+  createdAt   DateTime @default(now())
+  class       Class    @relation(fields: [classId], references: [id])
+  subject     Subject  @relation(fields: [subjectId], references: [id])
+  statuses    HomeworkStatus[]
+}
+
+model HomeworkStatus {
+  id          String   @id @default(cuid())
+  userId      String
+  homeworkId  String
+  status      Boolean  @default(false) // false = offen, true = erledigt
+  user        User     @relation(fields: [userId], references: [id])
+  homework    Homework @relation(fields: [homeworkId], references: [id])
+}
+
+enum Role {
+  STUDENT
+  PARENT
+  ADMIN
 }
